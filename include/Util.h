@@ -20,6 +20,8 @@
 #ifndef _BinkUtil_h_
 #define _BinkUtil_h_
 
+#include <string.h> // DG: apparently memcpy(), memset() etc are used in several files including this one
+
 const int av_log2_c(unsigned int v);
 
 #endif

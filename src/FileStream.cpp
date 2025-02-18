@@ -72,7 +72,11 @@ uint32_t FileStream::ReadUint32BE()
 {
 	uint32_t value;
 	file.read(reinterpret_cast<char*>(&value), 4);
+#ifdef _MSC_VER
 	return _byteswap_ulong(value);
+#else // DG: provide alternative for GCC/clang
+	return __builtin_bswap32(value);
+#endif
 }
 
 uint16_t FileStream::ReadUint16LE()
@@ -86,7 +90,11 @@ uint16_t FileStream::ReadUint16BE()
 {
 	uint16_t value;
 	file.read(reinterpret_cast<char*>(&value), 2);
+#ifdef _MSC_VER
 	return _byteswap_ushort(value);
+#else // DG: provide alternative for GCC/clang
+	return __builtin_bswap16(value);
+#endif
 }
 
 uint8_t FileStream::ReadByte()

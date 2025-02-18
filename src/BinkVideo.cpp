@@ -47,6 +47,7 @@
 #include "Util.h"
 #include "LogError.h"
 #include "binkdata.h"
+#include <algorithm> // DG: for std::min/max
 
 static const uint8_t bink_rlelens[4] = { 4, 8, 12, 32 };
 
@@ -104,7 +105,11 @@ void BinkDecoder::InitBundles()
 void BinkDecoder::FreeBundles()
 {
 	for (int i = 0; i < BINK_NB_SRC; i++)
-		delete[] bundle[i].data;
+		if (bundle[i].data)
+		{
+			delete[] bundle[i].data;
+			bundle[i].data = NULL;
+		}
 }
 
 uint8_t BinkDecoder::GetHuffSymbol(BinkCommon::BitReader &bits, Tree &tree)
@@ -451,7 +456,7 @@ int BinkDecoder::ReadDCs(BinkCommon::BitReader &bits, Bundle *b, int start_bits,
                 v += v2;
                 *dst++ = v;
                 if (v < -32768 || v > 32767) {
-					BinkCommon::LogError("DC value went out of bounds" + v);
+					BinkCommon::LogError("DC value went out of bounds: " + std::to_string(v));
                     return -1;
                 }
             }
