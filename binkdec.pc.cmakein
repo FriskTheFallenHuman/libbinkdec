@@ -5,7 +5,7 @@ sharedlibdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${exec_prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
 Name: libbinkdec
-Description: a bink video decode library base on FFMPEG
+Description: a bink video decoder library base on FFMPEG
 Version: @binkdec_VERSION@
 
 Requires:

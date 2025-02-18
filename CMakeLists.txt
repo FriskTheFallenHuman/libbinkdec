@@ -5,7 +5,7 @@ project(
     LANGUAGES C CXX
     VERSION 1.0.0.1
     HOMEPAGE_URL "http://homepage.eircom.net/~duncandsl/avp/"
-    DESCRIPTION "a bink video decode library base on FFMPEG")
+    DESCRIPTION "a bink video decoder library base on FFMPEG")
 
 # ============================================================================
 # CPack
@@ -124,7 +124,7 @@ if(BUILD_STATIC)
         binkdec_static
         PROPERTIES EXPORT_NAME BINKDECSTATIC
                    OUTPUT_NAME binkdec${binkdec_static_suffix}
-                   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+                   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 endif(BUILD_STATIC)
 
 if(CREATE_INSTALL)

@@ -5,7 +5,7 @@ sharedlibdir=@sharedlibdir@
 includedir=@includedir@
 
 Name: libbinkdec
-Description: a bink video decode library base on FFMPEG
+Description: a bink video decoder library base on FFMPEG
 Version: @VERSION@
 
 Requires:
