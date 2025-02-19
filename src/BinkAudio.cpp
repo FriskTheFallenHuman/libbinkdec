@@ -358,7 +358,7 @@ void BinkDecoder::DecodeAudioBlock( uint32_t trackIndex, BinkCommon::BitReader& 
 			track->trans.dct.dct_calc( &track->trans.dct,  coeffs );
 
 			// SRS - added float cast for type consistency
-			float mul = ( float )track->frameLength;
+			float mul = ( float )track->frameLength * 0.5f;
 
 			// vector_fmul_scalar()
 			for( int i = 0; i < track->frameLength; i++ )

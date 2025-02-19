@@ -72,6 +72,8 @@ void BinkDecoder::VideoPacket( uint32_t packetSize )
  */
 void BinkDecoder::InitLengths( int width, int bw )
 {
+	width = ( width + 7 ) & ( ~7 );
+
 	bundle[BINK_SRC_BLOCK_TYPES].len = av_log2_c( ( width >> 3 ) + 511 ) + 1;
 
 	bundle[BINK_SRC_SUB_BLOCK_TYPES].len = av_log2_c( ( width >> 4 ) + 511 ) + 1;
@@ -964,7 +966,7 @@ int BinkDecoder::DecodePlane( BinkCommon::BitReader& bits, int plane_idx, int is
 			blk = GetValue( BINK_SRC_BLOCK_TYPES );
 
 			// 16x16 block type on odd line means part of the already decoded block, so skip it
-			if( ( by & 1 ) && blk == SCALED_BLOCK )
+			if( ( ( by & 1 ) || ( bx & 1 ) ) && blk == SCALED_BLOCK )
 			{
 				bx++;
 				dst  += 8;
