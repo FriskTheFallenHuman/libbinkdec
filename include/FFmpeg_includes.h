@@ -52,16 +52,16 @@
 
 // taken from FFmpeg - mem.h
 #ifdef _MSC_VER
-#define DECLARE_ALIGNED(n,t,v)      __declspec(align(n)) t v
+	#define DECLARE_ALIGNED(n,t,v)      __declspec(align(n)) t v
 #else // DG: add alternative that should work with at least GCC and clang
-#define DECLARE_ALIGNED(n,t,v)      t __attribute__ ((aligned (n))) v
+	#define DECLARE_ALIGNED(n,t,v)      t __attribute__ ((aligned (n))) v
 #endif
 // SRS - Add guards to prevent override of standard math defines
 #ifndef M_PI
-#define M_PI           3.14159265358979323846  /* pi */
+	#define M_PI           3.14159265358979323846  /* pi */
 #endif
 #ifndef M_SQRT1_2
-#define M_SQRT1_2      0.70710678118654752440  /* 1/sqrt(2) */
+	#define M_SQRT1_2      0.70710678118654752440  /* 1/sqrt(2) */
 #endif
 
 #define HAVE_MMX 0

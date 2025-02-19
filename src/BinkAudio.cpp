@@ -59,75 +59,91 @@ const int kNumBands = 25;
  * @param a value to clip
  * @return clipped value
  */
-static /*av_always_inline*/ const int16_t av_clip_int16_c(int a)
+static /*av_always_inline*/ const int16_t av_clip_int16_c( int a )
 {
-    if ((a+0x8000) & ~0xFFFF) return (a>>31) ^ 0x7FFF;
-    else                      return a;
+	if( ( a + 0x8000 ) & ~0xFFFF )
+	{
+		return ( a >> 31 ) ^ 0x7FFF;
+	}
+	else
+	{
+		return a;
+	}
 }
 
-static /*av_always_inline*/ int float_to_int16_one(const float *src){
-    return av_clip_int16_c((int)(*src));
+static /*av_always_inline*/ int float_to_int16_one( const float* src )
+{
+	return av_clip_int16_c( ( int )( *src ) );
 }
 
 // from fmtconvert.c
-static void float_to_int16_interleave_c(int16_t *dst, const float **src, long len, int channels)
+static void float_to_int16_interleave_c( int16_t* dst, const float** src, long len, int channels )
 {
-    if (channels==2)
+	if( channels == 2 )
 	{
-        for (int i = 0; i < len; i++)
+		for( int i = 0; i < len; i++ )
 		{
-            dst[2*i]   = float_to_int16_one(src[0] + i);
-            dst[2*i+1] = float_to_int16_one(src[1] + i);
-        }
-    }
+			dst[2 * i]   = float_to_int16_one( src[0] + i );
+			dst[2 * i + 1] = float_to_int16_one( src[1] + i );
+		}
+	}
 	else
 	{
-        for (int c = 0; c < channels; c++)
+		for( int c = 0; c < channels; c++ )
 		{
-            for (int i = 0, j = c; i < len; i++, j += channels)
-                dst[j] = float_to_int16_one(src[c] + i);
+			for( int i = 0, j = c; i < len; i++, j += channels )
+			{
+				dst[j] = float_to_int16_one( src[c] + i );
+			}
 		}
-    }
+	}
 }
 
-float BinkDecoder::GetAudioFloat(BinkCommon::BitReader &bits)
+float BinkDecoder::GetAudioFloat( BinkCommon::BitReader& bits )
 {
-    int power = bits.GetBits(5);
-    float f = ldexpf((float)bits.GetBits(23), power - 23);
-    if (bits.GetBit())
-        f = -f;
+	int power = bits.GetBits( 5 );
+	float f = ldexpf( ( float )bits.GetBits( 23 ), power - 23 );
+	if( bits.GetBit() )
+	{
+		f = -f;
+	}
 
-    return f;
+	return f;
 }
 
-bool BinkDecoder::CreateAudioTrack(uint32_t sampleRate, uint16_t flags)
+bool BinkDecoder::CreateAudioTrack( uint32_t sampleRate, uint16_t flags )
 {
-	AudioTrack *track = new AudioTrack;
+	AudioTrack* track = new AudioTrack;
 
 	// determine frame length
 	uint32_t frameLenBits, nChannels;
 
-	if (sampleRate < 22050) {
+	if( sampleRate < 22050 )
+	{
 		frameLenBits = 9;
 	}
-	else if (sampleRate < 44100) {
+	else if( sampleRate < 44100 )
+	{
 		frameLenBits = 10;
 	}
-	else {
+	else
+	{
 		frameLenBits = 11;
 	}
 
 	// check nunber of channels
-	if (flags & kAudioStereo) {
+	if( flags & kAudioStereo )
+	{
 		nChannels = 2;
 	}
-	else {
+	else
+	{
 		nChannels = 1;
 	}
 
 	track->nChannelsReal = nChannels;
-	
-	if (flags & kAudioUseDCT)
+
+	if( flags & kAudioUseDCT )
 	{
 		track->transformType = kTransformTypeDCT;
 	}
@@ -137,52 +153,60 @@ bool BinkDecoder::CreateAudioTrack(uint32_t sampleRate, uint16_t flags)
 
 		// audio is already interleaved for the RDFT format variant
 		sampleRate   *= nChannels;
-		frameLenBits += av_log2_c(nChannels);
+		frameLenBits += av_log2_c( nChannels );
 		nChannels = 1;
 	}
 
 	int frameLength = 1 << frameLenBits;
 	int overlapLength = frameLength / 16;
-	int blockSize = (frameLength - overlapLength) * nChannels;
+	int blockSize = ( frameLength - overlapLength ) * nChannels;
 
-	int sampleRateHalf = (sampleRate + 1) / 2;
-	float root = 2.0f / sqrt((float)frameLength);
+	int sampleRateHalf = ( sampleRate + 1 ) / 2;
+	float root = 2.0f / sqrt( ( float )frameLength );
 
 	uint32_t nBands = 0;
 
 	// calculate number of bands
-	for (nBands = 1; nBands < kNumBands; nBands++)
+	for( nBands = 1; nBands < kNumBands; nBands++ )
 	{
-		if (sampleRateHalf <= criticalFrequencies[nBands - 1])
+		if( sampleRateHalf <= criticalFrequencies[nBands - 1] )
+		{
 			break;
+		}
 	}
 
-	track->bands.resize(nBands + 1);
+	track->bands.resize( nBands + 1 );
 
 	// populate bands data
 	track->bands[0] = 2;
 
-	for (uint32_t i = 1; i < nBands; i++)
+	for( uint32_t i = 1; i < nBands; i++ )
 	{
-		track->bands[i] = (criticalFrequencies[i - 1] * frameLength / sampleRateHalf) & ~1;
+		track->bands[i] = ( criticalFrequencies[i - 1] * frameLength / sampleRateHalf ) & ~1;
 	}
 
 	track->bands[nBands] = frameLength;
 
 	// initialise coefficients pointer array
-	for (uint32_t i = 0; i < nChannels; i++)
+	for( uint32_t i = 0; i < nChannels; i++ )
 	{
 		track->coeffsPtr[i] = track->coeffs + i * frameLength;
 	}
 
-	if (kTransformTypeRDFT == track->transformType)
-		ff_rdft_init(&track->trans.rdft, frameLenBits, DFT_C2R);
-	else if (kTransformTypeDCT == track->transformType)
-		ff_dct_init(&track->trans.dct, frameLenBits, DCT_III);
+	if( kTransformTypeRDFT == track->transformType )
+	{
+		ff_rdft_init( &track->trans.rdft, frameLenBits, DFT_C2R );
+	}
+	else if( kTransformTypeDCT == track->transformType )
+	{
+		ff_dct_init( &track->trans.dct, frameLenBits, DCT_III );
+	}
 	else
+	{
 		return false;
+	}
 
-	track->blockBufferSize = frameLength * nChannels * sizeof(int16_t);
+	track->blockBufferSize = frameLength * nChannels * sizeof( int16_t );
 	track->blockBuffer     = new int16_t[track->blockBufferSize];
 
 	track->blockSize      = blockSize;
@@ -200,144 +224,163 @@ bool BinkDecoder::CreateAudioTrack(uint32_t sampleRate, uint16_t flags)
 	track->bufferSize = 0;
 	track->buffer     = 0;
 	track->bytesReadThisFrame = 0;
-	
+
 	// add the track to the track vector
-	audioTracks.push_back(track);
+	audioTracks.push_back( track );
 
 	return true;
 }
 
-void BinkDecoder::AudioPacket(uint32_t trackIndex, uint32_t packetSize)
+void BinkDecoder::AudioPacket( uint32_t trackIndex, uint32_t packetSize )
 {
 	// create a temp bit reader for this packet
-	BinkCommon::BitReader bits(file, packetSize);
+	BinkCommon::BitReader bits( file, packetSize );
 
-	AudioTrack *track = audioTracks[trackIndex];
+	AudioTrack* track = audioTracks[trackIndex];
 
-	uint8_t *bufferPtr = track->buffer;
+	uint8_t* bufferPtr = track->buffer;
 
 	// each call to DecodeAudioBlock should produce this many bytes
 	uint32_t bytesDone = track->blockSize * 2;
 
-	while (bits.GetPosition() < bits.GetSize())
+	while( bits.GetPosition() < bits.GetSize() )
 	{
-		DecodeAudioBlock(trackIndex, bits);
+		DecodeAudioBlock( trackIndex, bits );
 
-		memcpy(bufferPtr, track->blockBuffer, std::min(track->bufferSize - track->bytesReadThisFrame, bytesDone));
+		memcpy( bufferPtr, track->blockBuffer, std::min( track->bufferSize - track->bytesReadThisFrame, bytesDone ) );
 		bufferPtr += bytesDone;
 
 		track->bytesReadThisFrame += bytesDone;
 
 		// align to a 32 bit boundary
-		int n = (-(int)bits.GetPosition()) & 31;
-		if (n) bits.SkipBits(n);
+		int n = ( -( int )bits.GetPosition() ) & 31;
+		if( n )
+		{
+			bits.SkipBits( n );
+		}
 	}
 }
 
-void BinkDecoder::DecodeAudioBlock(uint32_t trackIndex, BinkCommon::BitReader &bits)
+void BinkDecoder::DecodeAudioBlock( uint32_t trackIndex, BinkCommon::BitReader& bits )
 {
 	int i, j, k;
 	float q, quant[25];
 	int width, coeff;
 
-	AudioTrack *track = audioTracks[trackIndex];
+	AudioTrack* track = audioTracks[trackIndex];
 
-	int16_t *out = track->blockBuffer;
+	int16_t* out = track->blockBuffer;
 
-	if (kTransformTypeDCT == track->transformType)
-		bits.SkipBits(2);
-
-	for (uint32_t ch = 0; ch < track->nChannels; ch++) 
+	if( kTransformTypeDCT == track->transformType )
 	{
-		float *coeffs = track->coeffsPtr[ch];
+		bits.SkipBits( 2 );
+	}
 
-		coeffs[0] = GetAudioFloat(bits) * track->root;
-		coeffs[1] = GetAudioFloat(bits) * track->root;
+	for( uint32_t ch = 0; ch < track->nChannels; ch++ )
+	{
+		float* coeffs = track->coeffsPtr[ch];
 
-        for (uint32_t b = 0; b < track->nBands; b++) 
+		coeffs[0] = GetAudioFloat( bits ) * track->root;
+		coeffs[1] = GetAudioFloat( bits ) * track->root;
+
+		for( uint32_t b = 0; b < track->nBands; b++ )
 		{
-            /* constant is result of 0.066399999/log10(M_E) */
-            int value = bits.GetBits(8);
-            quant[b] = expf(std::min(value, (int)95) * 0.15289164787221953823f) * track->root;
-        }
+			/* constant is result of 0.066399999/log10(M_E) */
+			int value = bits.GetBits( 8 );
+			quant[b] = expf( std::min( value, ( int )95 ) * 0.15289164787221953823f ) * track->root;
+		}
 
-        k = 0;
-        q = quant[0];
+		k = 0;
+		q = quant[0];
 
-        // parse coefficients
-        i = 2;
-        while (i < track->frameLength)
+		// parse coefficients
+		i = 2;
+		while( i < track->frameLength )
 		{
-			if (bits.GetBit())
+			if( bits.GetBit() )
 			{
-                j = i + RLEentries[bits.GetBits(4)] * 8;
-            } else {
-                j = i + 8;
-            }
-
-            j = std::min(j, track->frameLength);
-
-            width = bits.GetBits(4);
-            if (width == 0) 
-			{
-				// SRS - added size_t and uint32_t casts for type consistency
-                memset(coeffs + i, 0, ((size_t)j - i) * sizeof(*coeffs));
-                i = j;
-                while (track->bands[k] < (uint32_t)i)
-                    q = quant[k++];
-            }
+				j = i + RLEentries[bits.GetBits( 4 )] * 8;
+			}
 			else
 			{
-                while (i < j)
-				{
-                    if (track->bands[k] == i)
-                        q = quant[k++];
-                    coeff = bits.GetBits(width);
-                    if (coeff) 
-					{
-                        if (bits.GetBit())
-                            coeffs[i] = -q * coeff;
-                        else
-                            coeffs[i] =  q * coeff;
-                    } 
-					else 
-					{
-                        coeffs[i] = 0.0f;
-                    }
-                    i++;
-                }
-            }
-        }
+				j = i + 8;
+			}
 
-		if (kTransformTypeRDFT == track->transformType)
-		{
-			track->trans.rdft.rdft_calc(&track->trans.rdft, coeffs);
+			j = std::min( j, track->frameLength );
+
+			width = bits.GetBits( 4 );
+			if( width == 0 )
+			{
+				// SRS - added size_t and uint32_t casts for type consistency
+				memset( coeffs + i, 0, ( ( size_t )j - i ) * sizeof( *coeffs ) );
+				i = j;
+				while( track->bands[k] < ( uint32_t )i )
+				{
+					q = quant[k++];
+				}
+			}
+			else
+			{
+				while( i < j )
+				{
+					if( track->bands[k] == i )
+					{
+						q = quant[k++];
+					}
+					coeff = bits.GetBits( width );
+					if( coeff )
+					{
+						if( bits.GetBit() )
+						{
+							coeffs[i] = -q * coeff;
+						}
+						else
+						{
+							coeffs[i] =  q * coeff;
+						}
+					}
+					else
+					{
+						coeffs[i] = 0.0f;
+					}
+					i++;
+				}
+			}
 		}
-		else if (kTransformTypeDCT == track->transformType)
+
+		if( kTransformTypeRDFT == track->transformType )
+		{
+			track->trans.rdft.rdft_calc( &track->trans.rdft, coeffs );
+		}
+		else if( kTransformTypeDCT == track->transformType )
 		{
 			coeffs[0] /= 0.5f;
-			track->trans.dct.dct_calc(&track->trans.dct,  coeffs);
+			track->trans.dct.dct_calc( &track->trans.dct,  coeffs );
 
 			// SRS - added float cast for type consistency
-			float mul = (float)track->frameLength;
+			float mul = ( float )track->frameLength;
 
 			// vector_fmul_scalar()
-			for (int i = 0; i < track->frameLength; i++)
+			for( int i = 0; i < track->frameLength; i++ )
+			{
 				coeffs[i] = coeffs[i] * mul;
+			}
 		}
 	}
 
-	float_to_int16_interleave_c(out, (const float **)track->coeffsPtr, track->frameLength, track->nChannels);
+	float_to_int16_interleave_c( out, ( const float** )track->coeffsPtr, track->frameLength, track->nChannels );
 
-	if (!track->first) {
-        int count = track->overlapLength * track->nChannels;
-        int shift = av_log2_c(count);
-        for (i = 0; i < count; i++) {
-            out[i] = (track->previous[i] * (count - i) + out[i] * i) >> shift;
+	if( !track->first )
+	{
+		int count = track->overlapLength * track->nChannels;
+		int shift = av_log2_c( count );
+		for( i = 0; i < count; i++ )
+		{
+			out[i] = ( track->previous[i] * ( count - i ) + out[i] * i ) >> shift;
 		}
 	}
 
-	memcpy(track->previous, out + track->blockSize, track->overlapLength * track->nChannels * sizeof(*out));
+	memcpy( track->previous, out + track->blockSize, track->overlapLength * track->nChannels * sizeof( *out ) );
 
 	track->first = false;
 }
@@ -345,19 +388,19 @@ void BinkDecoder::DecodeAudioBlock(uint32_t trackIndex, BinkCommon::BitReader &b
 uint32_t BinkDecoder::GetNumAudioTracks()
 {
 	// SRS - added uint32_t cast for type consistency
-	return (uint32_t)audioTracks.size();
+	return ( uint32_t )audioTracks.size();
 }
 
-AudioInfo BinkDecoder::GetAudioTrackDetails(uint32_t trackIndex)
+AudioInfo BinkDecoder::GetAudioTrackDetails( uint32_t trackIndex )
 {
 	AudioInfo info;
-	AudioTrack *track = audioTracks[trackIndex];
+	AudioTrack* track = audioTracks[trackIndex];
 
 	info.sampleRate = track->sampleRate;
 	info.nChannels  = track->nChannelsReal;
 
 	// undo sample rate adjustment we do internally for RDFT audio
-	if (kTransformTypeRDFT == track->transformType)
+	if( kTransformTypeRDFT == track->transformType )
 	{
 		info.sampleRate /= track->nChannelsReal;
 	}
@@ -368,15 +411,19 @@ AudioInfo BinkDecoder::GetAudioTrackDetails(uint32_t trackIndex)
 	return info;
 }
 
-uint32_t BinkDecoder::GetAudioData(uint32_t trackIndex, int16_t *audioBuffer)
+uint32_t BinkDecoder::GetAudioData( uint32_t trackIndex, int16_t* audioBuffer )
 {
-	if (!audioBuffer)
+	if( !audioBuffer )
+	{
 		return 0;
+	}
 
-	AudioTrack *track = audioTracks[trackIndex];
+	AudioTrack* track = audioTracks[trackIndex];
 
-	if (track->bytesReadThisFrame)
-		memcpy(audioBuffer, track->buffer, std::min(track->bufferSize, track->bytesReadThisFrame));
+	if( track->bytesReadThisFrame )
+	{
+		memcpy( audioBuffer, track->buffer, std::min( track->bufferSize, track->bytesReadThisFrame ) );
+	}
 
 	return track->bytesReadThisFrame;
 }

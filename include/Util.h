@@ -22,6 +22,6 @@
 
 #include <string.h> // DG: apparently memcpy(), memset() etc are used in several files including this one
 
-const int av_log2_c(unsigned int v);
+const int av_log2_c( unsigned int v );
 
 #endif

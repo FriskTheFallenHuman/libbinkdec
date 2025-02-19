@@ -23,31 +23,32 @@
 #include <stdint.h>
 #include "FileStream.h"
 
-namespace BinkCommon {
+namespace BinkCommon
+{
 
 class BitReader
 {
-	public:
-		BitReader(BinkCommon::FileStream &file, uint32_t size);
-		~BitReader();
-		uint32_t GetBit();
-		uint32_t GetBits(uint32_t n);
-		void SkipBits(uint32_t n);
+public:
+	BitReader( BinkCommon::FileStream& file, uint32_t size );
+	~BitReader();
+	uint32_t GetBit();
+	uint32_t GetBits( uint32_t n );
+	void SkipBits( uint32_t n );
 
-		uint32_t GetSize();
-		uint32_t GetPosition();
+	uint32_t GetSize();
+	uint32_t GetPosition();
 
-	private:
-		uint32_t totalSize;
-		uint32_t currentOffset;
-		uint32_t bytesRead;
+private:
+	uint32_t totalSize;
+	uint32_t currentOffset;
+	uint32_t bytesRead;
 
-		BinkCommon::FileStream *file;
+	BinkCommon::FileStream* file;
 
-		uint8_t cache;
-		uint32_t nCachedBits;
+	uint8_t cache;
+	uint32_t nCachedBits;
 
-		void FillCache();
+	void FillCache();
 };
 
 } // close namespace BinkCommon

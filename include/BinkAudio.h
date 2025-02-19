@@ -29,7 +29,8 @@ extern "C" {
 }
 
 // audio transform type
-enum eTransformType {
+enum eTransformType
+{
 	kTransformTypeRDFT = 0,
 	kTransformTypeDCT  = 1
 };
@@ -50,7 +51,7 @@ static const uint16_t criticalFrequencies[kNumCriticalFrequencies] =
 };
 
 static const int kNumRLEentries = 16;
-static const uint8_t RLEentries[kNumRLEentries] = 
+static const uint8_t RLEentries[kNumRLEentries] =
 {
 	2,  3,  4,  5,
 	6,  8,  9, 10,
@@ -74,7 +75,8 @@ struct AudioTrack
 	bool first;
 	float root;
 
-	union {
+	union
+	{
 		RDFTContext rdft;
 		DCTContext  dct;
 	} trans;
@@ -84,12 +86,12 @@ struct AudioTrack
 	float coeffs[kBlockMaxSize];
 	int16_t previous[kBlockMaxSize / 16];    // coeffs from previous audio block
 
-	float *coeffsPtr[kMaxChannels];    // pointers to the coeffs arrays for float_to_int16_interleave
+	float* coeffsPtr[kMaxChannels];    // pointers to the coeffs arrays for float_to_int16_interleave
 
-	int16_t  *blockBuffer;
+	int16_t*  blockBuffer;
 	uint32_t blockBufferSize;
 
-	uint8_t  *buffer;
+	uint8_t*  buffer;
 	uint32_t bufferSize; // size in bytes
 
 	uint32_t bytesReadThisFrame;

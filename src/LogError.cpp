@@ -19,11 +19,12 @@
 
 #include "LogError.h"
 
-namespace BinkCommon {
+namespace BinkCommon
+{
 
 static std::string LastError;
 
-void LogError(const std::string &error)
+void LogError( const std::string& error )
 {
 	LastError = error;
 }

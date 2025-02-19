@@ -24,19 +24,20 @@
 #include "BitReader.h"
 #include <vector>
 
-namespace BinkCommon {
-
-struct VLC 
+namespace BinkCommon
 {
-    uint8_t symbol;
-    uint8_t code;
+
+struct VLC
+{
+	uint8_t symbol;
+	uint8_t code;
 };
 
 typedef std::vector<std::vector<VLC> > VLCtable;
 
-uint8_t  VLC_GetCodeBits (BinkCommon::BitReader &bits, VLCtable &table);
-void     VLC_InitTable   (VLCtable &table, uint32_t maxLength, uint32_t size, const uint8_t *lengths, const uint8_t *bits);
-uint32_t VLC_GetSize     (VLCtable &table);
+uint8_t  VLC_GetCodeBits( BinkCommon::BitReader& bits, VLCtable& table );
+void     VLC_InitTable( VLCtable& table, uint32_t maxLength, uint32_t size, const uint8_t* lengths, const uint8_t* bits );
+uint32_t VLC_GetSize( VLCtable& table );
 
 } // close namespace BinkCommon
 
